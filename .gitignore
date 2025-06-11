@@ -1,3 +1,26 @@
+#database log files such as for sqlite
+*.db
+__pypackages__/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
 env/
-*.env
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# C extensions
+*.so
+
+# editor stuff
 .idea/
+*.iml
+.vscode/
