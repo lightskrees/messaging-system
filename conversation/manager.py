@@ -7,7 +7,7 @@ from src.base import ModelBase
 from src.models import Conversation, ConversationParticipant, User
 
 
-class ConversationRepository(ModelBase[Conversation]):
+class ConversationManager(ModelBase[Conversation]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Conversation)
 
@@ -26,30 +26,18 @@ class ConversationRepository(ModelBase[Conversation]):
                 Conversation.is_group == False,
                 ConversationParticipant.user_id.in_([user1_id, user2_id])
             )
-        ).group_by(Conversation.conversation_id)
+        ).group_by(Conversation.id)
 
-        existing = await self.session.exec(statement).first()
-        if existing:
-            return existing
+        conversation = (await self.session.exec(statement)).first()
+        if conversation:
+            return conversation
 
-        # Create new conversation
-        conversation = Conversation(is_group=False)
+        user1_obj = (await self.session.exec(select(User).where(User.id==user1_id))).first()
+        user2_obj = (await self.session.exec(select(User).where(User.id==user2_id))).first()
+
+        # creating a new conversation if there is no current convo...
+        conversation = Conversation(is_group=False, participants=[user1_obj, user2_obj])
         conversation = await self.create(conversation)
-
-        user_1_obj = self.session.get(User, user1_id)
-        user_2_obj = self.session.get(User, user2_id)
-
-        conversation.participants.append(user_1_obj)
-        conversation.participants.append(user_2_obj)
-
-        self.session.add(conversation)
-        await self.session.refresh(conversation)
-
-        #ToDo: to check if it is in sync with the link model.
-        # # Add participants
-        # self.session.add(ConversationParticipant(conversation_id=conversation.conversation_id, user_id=user1_id))
-        # self.session.add(ConversationParticipant(conversation_id=conversation.conversation_id, user_id=user2_id))
-        # await self.session.commit()
 
         return conversation
 
@@ -66,7 +54,8 @@ class ConversationRepository(ModelBase[Conversation]):
                 ConversationParticipant.user_id == user_id
             )
         )
-        participant = await self.session.exec(statement).first()
+        result = await self.session.exec(statement)
+        participant = result.first()
         if participant:
             await self.session.delete(participant)
             await self.session.commit()
