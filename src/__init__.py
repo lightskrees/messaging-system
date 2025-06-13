@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from auth.routes import router
+from auth.routes import router as auth_router
+from message.routes import router as message_router
 
 version = "v1"
 
@@ -20,4 +21,5 @@ app = FastAPI(
     }
 )
 
-app.include_router(router)
+app.include_router(auth_router)
+app.include_router(message_router)
