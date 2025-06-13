@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from auth.routes import router
 
 version = "v1"
 
@@ -18,3 +19,5 @@ app = FastAPI(
         "url": "https://github.com/lightskrees",
     }
 )
+
+app.include_router(router)
