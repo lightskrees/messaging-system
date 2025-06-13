@@ -24,3 +24,10 @@ venv.bak/
 .idea/
 *.iml
 .vscode/
+
+# Alembic migration files
+migrations/
+alembic/
+alembic.ini
+
+
