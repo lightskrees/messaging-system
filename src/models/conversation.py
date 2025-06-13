@@ -20,7 +20,7 @@ class Conversation(SQLModel, table=True):
     last_activity: datetime = Field(default_factory=datetime.now)
 
     # Relationships
-    messages: List["Message"] = Relationship(back_populates="conversation", link_model=ConversationParticipant)
+    messages: List["Message"] = Relationship(back_populates="conversation", sa_relationship_kwargs={"lazy": "selectin"})
     participants : List["User"] = Relationship(back_populates="conversations", link_model=ConversationParticipant)
 
     def validate_private_conversation(self):
