@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
@@ -15,10 +17,13 @@ class UserLogin(BaseModel):
     password: str
 
 class UserResponse(UserBase):
-    user_id: str
+    id : uuid.UUID
     is_online: bool
     last_seen: Optional[datetime] = None
     created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str

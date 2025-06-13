@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
@@ -89,13 +91,13 @@ class MessageCreate(BaseModel):
 
 
 class MessageResponse(BaseModel):
-    message_id: str
+    id : uuid.UUID
     timestamp: datetime
     message_type: MessageType
     is_read: bool
-    sender_id: str
-    recipient_id: str
-    conversation_id: str
+    sender_id: uuid.UUID
+    recipient_id: uuid.UUID
+    conversation_id: uuid.UUID
 
     # Content fields
     content: Optional[str] = None
@@ -115,3 +117,6 @@ class MessageResponse(BaseModel):
     video_duration: Optional[int] = None
     video_thumbnail_url: Optional[str] = None
     caption: Optional[str] = None
+
+    class Config:
+        from_attributes = True
