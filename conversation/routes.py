@@ -8,6 +8,7 @@ from message.service import MessageService
 from src.db_config import SessionDep
 from src.models import User
 
+from .manager import ConversationManager
 from .schemas import ConversationResponse
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
@@ -48,3 +49,17 @@ async def get_conversation_messages(
     message_service = MessageService(session)
     messages = message_service.get_conversation_messages(conversation_id)
     return messages
+
+
+@router.post("/{conversation_id}/participants", status_code=status.HTTP_200_OK)
+async def add_participant(
+    conversation_id: str,
+    user_id: str,
+    session: SessionDep,
+    _: User = Depends(get_current_user),
+):
+    conversation_manager = ConversationManager(session)
+    success = await conversation_manager.add_participant(conversation_id, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Conversation or user not found")
+    return {"status": "participant added"}
