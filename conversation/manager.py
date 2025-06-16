@@ -1,8 +1,10 @@
 from typing import List
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, and_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from auth.manager import UserManager
 from src.base import BaseManager
 from src.models import Conversation, ConversationParticipant, User
 
@@ -10,6 +12,7 @@ from src.models import Conversation, ConversationParticipant, User
 class ConversationManager(BaseManager[Conversation]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Conversation)
+        self.user_manager = UserManager(session)
 
     async def get_by_user(self, user_id: str) -> List[Conversation]:
         statement = (
@@ -34,8 +37,8 @@ class ConversationManager(BaseManager[Conversation]):
         if conversation:
             return conversation
 
-        user1_obj = (await self.session.exec(select(User).where(User.id == user1_id))).first()
-        user2_obj = (await self.session.exec(select(User).where(User.id == user2_id))).first()
+        user1_obj = await self.user_manager.get_by_id(user1_id)
+        user2_obj = await self.user_manager.get_by_id(user2_id)
 
         # creating a new conversation if there is no current convo...
         conversation = Conversation(is_group=False, participants=[user1_obj, user2_obj])
@@ -44,8 +47,27 @@ class ConversationManager(BaseManager[Conversation]):
         return conversation
 
     async def add_participant(self, conversation_id: str, user_id: str) -> bool:
-        participant = ConversationParticipant(conversation_id=conversation_id, user_id=user_id)
-        self.session.add(participant)
+
+        user = await self.user_manager.get_by_id(user_id)
+
+        # fetching the conversation using selectinload to avoid lazy loadings in related objects.
+        # lazy loading is not allowed outside an async context; it triggers errors.
+        statement = (
+            select(Conversation)
+            .options(selectinload(Conversation.participants))
+            .where(Conversation.id == conversation_id)
+        )
+
+        conversation = (await self.session.exec(statement)).first()
+        if not conversation:
+            return False
+
+        conversation.participants.append(user)
+
+        # ToDo: to be used later...
+        # conversation.validate_conversation()
+
+        self.session.add(conversation)
         await self.session.commit()
         return True
 
