@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import List, Optional
 
@@ -9,12 +10,15 @@ from message.schemas import MessageResponse
 
 
 class ConversationResponse(BaseModel):
-    conversation_id: str
+    id: uuid.UUID
     conversation_name: Optional[str]
     is_group: bool
     created_at: datetime
     last_activity: datetime
     messages: List[MessageResponse] = []
+
+    class Config:
+        from_attributes = True
 
     # ToDo: still figuring out how to dynamically change conversation names according the authenticated user...
 
