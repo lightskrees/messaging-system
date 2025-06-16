@@ -3,11 +3,11 @@ from typing import List
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.base import ModelBase
+from src.base import BaseManager
 from src.models import Conversation, ConversationParticipant, User
 
 
-class ConversationManager(ModelBase[Conversation]):
+class ConversationManager(BaseManager[Conversation]):
     def __init__(self, session: AsyncSession):
         super().__init__(session, Conversation)
 

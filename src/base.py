@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 T = TypeVar('T', bound="SQLModel")
 
-class ModelBase(Generic[T], ABC):
+class BaseManager(Generic[T], ABC):
     def __init__(self, session: AsyncSession, model: Type[T]):
         self.session = session
         self.model = model
