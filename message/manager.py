@@ -1,6 +1,8 @@
+from typing import List
+
 from sqlmodel import Session, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import List
+
 from src.base import BaseManager
 from src.models import Message
 
@@ -10,17 +12,16 @@ class MessageManager(BaseManager[Message]):
         super().__init__(session, Message)
 
     async def get_by_conversation(self, conversation_id: str) -> List[Message]:
-        statement = select(Message).where(
-            Message.conversation_id == conversation_id
-        ).order_by(Message.timestamp)
+        statement = select(Message).where(Message.conversation_id == conversation_id).order_by(Message.timestamp)
         result = await self.session.exec(statement)
         return result.all()
 
     async def get_unread_messages(self, user_id: str) -> List[Message]:
-        statement = select(Message).where(
-            Message.recipient_id == user_id,
-            Message.is_read == False
-        ).order_by(Message.timestamp)
+        statement = (
+            select(Message)
+            .where(Message.recipient_id == user_id, Message.is_read == False)
+            .order_by(Message.timestamp)
+        )
         result = await self.session.exec(statement)
         return result.all()
 

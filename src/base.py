@@ -1,9 +1,11 @@
+from abc import ABC
+from typing import Generic, List, Optional, Type, TypeVar
+
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Generic, TypeVar, Type, Optional, List
-from abc import ABC, abstractmethod
 
-T = TypeVar('T', bound="SQLModel")
+T = TypeVar("T", bound="SQLModel")
+
 
 class BaseManager(Generic[T], ABC):
     def __init__(self, session: AsyncSession, model: Type[T]):

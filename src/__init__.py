@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from auth.routes import router as auth_router
 from message.routes import router as message_router
 
@@ -8,7 +9,7 @@ description = """
 A simple messaging system API that allows users to send, receive, and manage messages.
     """
 
-version_prefix =f"/api/{version}"
+version_prefix = f"/api/{version}"
 
 app = FastAPI(
     title="Messaging System API",
@@ -18,7 +19,7 @@ app = FastAPI(
         "name": "thedude",
         "email": "nchris3010@gmail.com",
         "url": "https://github.com/lightskrees",
-    }
+    },
 )
 
 app.include_router(auth_router)

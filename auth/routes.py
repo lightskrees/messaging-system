@@ -1,23 +1,19 @@
+from datetime import datetime, timedelta
+from typing import Annotated, List, Optional
+
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from typing import Optional
-import jwt
-from typing import Annotated
-from sqlmodel.ext.asyncio.session import AsyncSession
 
-# from src.db_config import SessionDep
-from src.db_config import settings, get_session
 from auth.manager import UserManager
+from auth.schemas import Token, UserCreate, UserLogin, UserResponse
+from src.db_config import SessionDep, settings
 from src.models import User
-from auth.schemas import UserCreate, UserResponse, Token, UserLogin
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -40,8 +36,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 async def get_current_user(
-        session : SessionDep,
-        token: str = Depends(oauth2_scheme),
+    session: SessionDep,
+    token: str = Depends(oauth2_scheme),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,17 +74,14 @@ async def register(user_create: UserCreate, session: SessionDep):
         username=user_create.username,
         email=user_create.email,
         phone_number=user_create.phone_number,
-        password_hash=get_password_hash(user_create.password)
+        password_hash=get_password_hash(user_create.password),
     )
     user_db = await user_repo.create(user)
     return user
 
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(
-        form_data: UserLogin,
-        session: SessionDep
-):
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep):
     user_repo = UserManager(session)
     user = await user_repo.get_by_username(form_data.username)
 
@@ -100,13 +93,12 @@ async def login_for_access_token(
         )
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 @router.get("/users/list")
-async def get_users(session: SessionDep) -> list[User] | None:
+async def get_users(session: SessionDep, _: User = Depends(get_current_user)) -> List[UserResponse] | None:
     user_manager = UserManager(session)
     users = await user_manager.get_all()
     return users

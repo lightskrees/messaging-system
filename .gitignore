@@ -29,5 +29,3 @@ venv.bak/
 migrations/
 alembic/
 alembic.ini
-
-

@@ -1,8 +1,9 @@
-from sqlmodel import SQLModel, Field, Relationship, Column
-import sqlalchemy.dialects.postgresql as pg
-from typing import Optional, List
-from datetime import datetime
 import uuid
+from datetime import datetime
+from typing import List, Optional
+
+import sqlalchemy.dialects.postgresql as pg
+from sqlmodel import Column, Field, Relationship, SQLModel
 
 
 class ConversationParticipant(SQLModel, table=True):
@@ -11,17 +12,17 @@ class ConversationParticipant(SQLModel, table=True):
 
 
 class Conversation(SQLModel, table=True):
-    id : uuid.UUID = Field(
-        sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4)
-    )
+    id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
     conversation_name: Optional[str] = Field(default=None)
     is_group: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.now)
     last_activity: datetime = Field(default_factory=datetime.now)
 
     # Relationships
-    messages: List["Message"] = Relationship(back_populates="conversation", sa_relationship_kwargs={"lazy": "selectin"})
-    participants : List["User"] = Relationship(back_populates="conversations", link_model=ConversationParticipant)
+    messages: List["Message"] = Relationship(
+        back_populates="conversation", sa_relationship_kwargs={"lazy": "selectin"}
+    )
+    participants: List["User"] = Relationship(back_populates="conversations", link_model=ConversationParticipant)
 
     def validate_private_conversation(self):
         if not self.is_group and len(self.participants) > 2:

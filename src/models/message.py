@@ -1,9 +1,11 @@
-from sqlmodel import SQLModel, Field, Relationship, Column
-import sqlalchemy.dialects.postgresql as pg
-from typing import Optional
+import uuid
 from datetime import datetime
 from enum import Enum
-import uuid
+from typing import Optional
+
+import sqlalchemy.dialects.postgresql as pg
+from sqlmodel import Column, Field, Relationship, SQLModel
+
 
 class MessageType(str, Enum):
     TEXT = "text"
@@ -14,9 +16,7 @@ class MessageType(str, Enum):
 
 
 class Message(SQLModel, table=True):
-    id: uuid.UUID = Field(
-        sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4)
-    )
+    id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
     timestamp: datetime = Field(default_factory=datetime.now)
     message_type: MessageType = Field(default=MessageType.TEXT)
     is_read: bool = Field(default=False)
@@ -25,7 +25,7 @@ class Message(SQLModel, table=True):
     conversation_id: Optional[uuid.UUID] = Field(foreign_key="conversation.id")
 
     #################
-    #MEDIA METADATA
+    # MEDIA METADATA
     ################
 
     # Content field populated only for text message types.
@@ -60,11 +60,9 @@ class Message(SQLModel, table=True):
 
     # Relationships
     sender: Optional["User"] = Relationship(
-        back_populates="sent_messages",
-        sa_relationship_kwargs={"foreign_keys": "Message.sender_id"}
+        back_populates="sent_messages", sa_relationship_kwargs={"foreign_keys": "Message.sender_id"}
     )
     recipient: Optional["User"] = Relationship(
-        back_populates="received_messages",
-        sa_relationship_kwargs={"foreign_keys": "Message.recipient_id"}
+        back_populates="received_messages", sa_relationship_kwargs={"foreign_keys": "Message.recipient_id"}
     )
     conversation: Optional["Conversation"] = Relationship(back_populates="messages")

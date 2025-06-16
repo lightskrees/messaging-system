@@ -1,6 +1,8 @@
+from typing import Optional
+
 from sqlmodel import Session, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import Optional
+
 from src.base import BaseManager
 from src.models import User
 

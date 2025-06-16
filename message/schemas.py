@@ -1,8 +1,9 @@
 import uuid
+from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, field_validator
-from typing import Optional
-from datetime import datetime
+
 from src.models.message import MessageType
 
 
@@ -39,59 +40,59 @@ class MessageCreate(BaseModel):
     # Optional caption for media messages
     caption: Optional[str] = None
 
-    @field_validator('content')
+    @field_validator("content")
     @classmethod
     def validate_text_content(cls, v, info):
-        message_type = info.data.get('message_type')
+        message_type = info.data.get("message_type")
         if message_type == MessageType.TEXT and not v:
-            raise ValueError('Content is required for text messages')
+            raise ValueError("Content is required for text messages")
         elif message_type != MessageType.TEXT and v:
-            raise ValueError('Content should only be provided for text messages')
+            raise ValueError("Content should only be provided for text messages")
         return v
 
-    @field_validator('image_url')
+    @field_validator("image_url")
     @classmethod
     def validate_image_url(cls, v, info):
-        message_type = info.data.get('message_type')
+        message_type = info.data.get("message_type")
         if message_type == MessageType.IMAGE and not v:
-            raise ValueError('Image URL is required for image messages')
+            raise ValueError("Image URL is required for image messages")
         elif message_type != MessageType.IMAGE and v:
-            raise ValueError('Image URL should only be provided for image messages')
+            raise ValueError("Image URL should only be provided for image messages")
         return v
 
-    @field_validator('file_url')
+    @field_validator("file_url")
     @classmethod
     def validate_file_url(cls, v, info):
-        message_type = info.data.get('message_type')
+        message_type = info.data.get("message_type")
         if message_type == MessageType.FILE and not v:
-            raise ValueError('File URL is required for file messages')
+            raise ValueError("File URL is required for file messages")
         elif message_type != MessageType.FILE and v:
-            raise ValueError('File URL should only be provided for file messages')
+            raise ValueError("File URL should only be provided for file messages")
         return v
 
-    @field_validator('voice_url')
+    @field_validator("voice_url")
     @classmethod
     def validate_voice_url(cls, v, info):
-        message_type = info.data.get('message_type')
+        message_type = info.data.get("message_type")
         if message_type == MessageType.VOICE and not v:
-            raise ValueError('Voice URL is required for voice messages')
+            raise ValueError("Voice URL is required for voice messages")
         elif message_type != MessageType.VOICE and v:
-            raise ValueError('Voice URL should only be provided for voice messages')
+            raise ValueError("Voice URL should only be provided for voice messages")
         return v
 
-    @field_validator('video_url')
+    @field_validator("video_url")
     @classmethod
     def validate_video_url(cls, v, info):
-        message_type = info.data.get('message_type')
+        message_type = info.data.get("message_type")
         if message_type == MessageType.VIDEO and not v:
-            raise ValueError('Video URL is required for video messages')
+            raise ValueError("Video URL is required for video messages")
         elif message_type != MessageType.VIDEO and v:
-            raise ValueError('Video URL should only be provided for video messages')
+            raise ValueError("Video URL should only be provided for video messages")
         return v
 
 
 class MessageResponse(BaseModel):
-    id : uuid.UUID
+    id: uuid.UUID
     timestamp: datetime
     message_type: MessageType
     is_read: bool
