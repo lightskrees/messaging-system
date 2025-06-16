@@ -72,15 +72,19 @@ class ConversationManager(BaseManager[Conversation]):
         return True
 
     async def remove_participant(self, conversation_id: str, user_id: str) -> bool:
+
+        user = self.user_manager.get_by_id(user_id)
+        conversation = self.get_by_id(conversation_id)
+
         statement = select(ConversationParticipant).where(
             and_(
                 ConversationParticipant.conversation_id == conversation_id, ConversationParticipant.user_id == user_id
             )
         )
-        result = await self.session.exec(statement)
-        participant = result.first()
+        participant = (await self.session.exec(statement)).first()
         if participant:
-            await self.session.delete(participant)
-            await self.session.commit()
+            conversation.participants.remove(user)
+            self.session.add(conversation)
+            await self.session.commit(conversation)
             return True
         return False
