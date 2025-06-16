@@ -3,7 +3,9 @@ from datetime import datetime
 from typing import List, Optional
 
 import sqlalchemy.dialects.postgresql as pg
+from fastapi import HTTPException
 from sqlmodel import Column, Field, Relationship, SQLModel
+from starlette import status
 
 
 class ConversationParticipant(SQLModel, table=True):
@@ -24,6 +26,9 @@ class Conversation(SQLModel, table=True):
     )
     participants: List["User"] = Relationship(back_populates="conversations", link_model=ConversationParticipant)
 
-    def validate_private_conversation(self):
+    def validate_conversation(self):
         if not self.is_group and len(self.participants) > 2:
-            raise ValueError("conversation cannot have more than 2 participants")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Private conversation cannot have more than 2 participants",
+            )
