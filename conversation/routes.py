@@ -22,7 +22,7 @@ async def get_user_conversations(
     current_user: UserAuthentication,
 ):
     message_service = MessageService(session)
-    conversations = await message_service.get_user_conversations(current_user.user_id)
+    conversations = await message_service.get_user_conversations(current_user.id)
     return conversations
 
 
