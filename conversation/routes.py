@@ -1,6 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
+from starlette import status
 
 from auth.routes import get_current_user
 from message.schemas import MessageResponse
