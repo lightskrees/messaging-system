@@ -33,3 +33,36 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+###################
+# ENCRYPTION SCHEMAS
+####################
+class KeyExchangeRequest(BaseModel):
+    user_id: uuid.UUID
+
+
+class PublicKeyResponse(BaseModel):
+    public_key: str
+
+
+class MessageEncryptRequest(BaseModel):
+    sender_id: uuid.UUID
+    receiver_id: uuid.UUID
+    message: str
+
+
+class EncryptedMessageResponse(BaseModel):
+    ciphertext: str
+    nonce: str
+
+
+class MessageDecryptRequest(BaseModel):
+    receiver_id: uuid.UUID
+    sender_id: uuid.UUID
+    ciphertext: str
+    nonce: str
+
+
+class DecryptedMessageResponse(BaseModel):
+    message: str
