@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from auth.manager import UserManager
 from auth.routes import get_current_user
 from src.db_config import SessionDep
 from src.models import User
@@ -16,6 +17,15 @@ async def send_message(
     session: SessionDep,
     current_user: User = Depends(get_current_user),
 ):
+    user_manager = UserManager(session)
+
+    recipient_key = await user_manager.get_user_key(message_create.recipient_id)
+    if not recipient_key:
+        raise HTTPException(
+            status_code=404,
+            detail="the user does not use our messaging system.",
+        )
+
     message_service = MessageService(session)
     message = await message_service.send_message(sender_id=str(current_user.id), message_data=message_create)
     return message
