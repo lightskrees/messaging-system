@@ -1,11 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
 
+from cryptography.hazmat.primitives import serialization
+from fastapi import HTTPException
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette import status
 
 from auth.manager import UserManager
+from auth.utils import load_private_key
 from conversation.manager import ConversationManager
-from src.models import Conversation, Message, MessageType
+from encryption import derive_key, encrypt_message, get_shared_secret
+from src.models import Conversation, Message, MessageType, UserKey
 
 from .manager import MessageManager
 from .schemas import MessageCreate
@@ -20,12 +26,19 @@ class MessageService:
         # self.notification_service = NotificationService()
 
     async def send_message(self, sender_id: str, message_data: MessageCreate) -> Message:
-        # Get or create conversation
+
+        recipient_userkey = (
+            await self.session.exec(select(UserKey).where(UserKey.user_id == message_data.recipient_id))
+        ).first()
+        if not recipient_userkey:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="the recipient does not use our messaging system.",
+            )
+        # Get or create a conversation if the user is registered with our system.
         conversation = await self.conversation_manager.get_or_create_private_conversation(
             sender_id, message_data.recipient_id
         )
-
-        print("we got hereee")
 
         # Create messages with appropriate fields based on type
         message_dict = {
@@ -37,9 +50,17 @@ class MessageService:
 
         print("message dict", message_dict)
 
+        sender_private_key = await load_private_key(sender_id)
+
+        recipient_key = serialization.load_pem_public_key(recipient_userkey.public_key)
+        shared_secret = await get_shared_secret(sender_private_key, recipient_key)
+        session_key = await derive_key(shared_secret)
+
         # Add type-specific fields
         if message_data.message_type == MessageType.TEXT:
-            message_dict["content"] = message_data.content
+            _, cipher_text = await encrypt_message(message_data.content, session_key=session_key)
+
+            message_dict["content"] = str(cipher_text)
         elif message_data.message_type == MessageType.IMAGE:
             message_dict.update(
                 {
