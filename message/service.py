@@ -11,6 +11,7 @@ from auth.manager import UserManager
 from auth.utils import load_private_key
 from conversation.manager import ConversationManager
 from encryption import derive_key, encrypt_message, get_shared_secret
+from src.db_config import register_sent_messages
 from src.models import Conversation, Message, MessageType, UserKey
 
 from .manager import MessageManager
@@ -106,6 +107,8 @@ class MessageService:
 
         # Save message
         message = await self.message_manager.create(message)
+
+        register_sent_messages(sender_id, message_data.recipient_id, message_data.content)
 
         # Update conversation last activity
         conversation.last_activity = datetime.now()
