@@ -20,7 +20,7 @@ def get_db_path() -> str:
 # def get_db_url() -> str:
 #     return f"sqlite+aiosqlite:///{get_db_path()}"
 
-main_engine = AsyncEngine(create_engine(settings.DATABASE_URL, echo=True))
+main_engine = AsyncEngine(create_engine(settings.DATABASE_URL, echo=False))
 # local_async_engine = AsyncEngine(create_engine(get_db_url(), echo=True))
 
 
