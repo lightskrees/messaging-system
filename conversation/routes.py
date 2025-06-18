@@ -38,21 +38,21 @@ async def get_conversation(
     _: UserAuthentication,
 ):
     message_service = MessageService(session)
-    conversation = message_service.get_conversation(conversation_id)
+    conversation = await message_service.get_conversation(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
 
 
-@router.get("/{conversation_id}/messages", response_model=List[MessageResponse])
-async def get_conversation_messages(
-    conversation_id: str,
-    session: SessionDep,
-    _: UserAuthentication,
-):
-    message_service = MessageService(session)
-    messages = message_service.get_conversation_messages(conversation_id)
-    return messages
+# @router.get("/{conversation_id}/messages", response_model=List[MessageResponse])
+# async def get_conversation_messages(
+#     conversation_id: str,
+#     session: SessionDep,
+#     _: UserAuthentication,
+# ):
+#     message_service = MessageService(session)
+#     messages = await message_service.get_conversation_messages(conversation_id)
+#     return messages
 
 
 @router.get("/{recipient_id}/messages")
