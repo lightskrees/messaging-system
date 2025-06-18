@@ -19,6 +19,14 @@ async def send_message(
 ):
     user_manager = UserManager(session)
 
+    connected_userkey = await user_manager.get_user_key(current_user.id)
+
+    if not connected_userkey:
+        raise HTTPException(
+            status_code=404,
+            detail="Something is wrong with your account settings. Please contact support.",
+        )
+
     recipient_key = await user_manager.get_user_key(message_create.recipient_id)
     if not recipient_key:
         raise HTTPException(
