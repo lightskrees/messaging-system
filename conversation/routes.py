@@ -76,6 +76,19 @@ async def get_conversation_messages(
     return {"messages": messages}
 
 
+@router.get("/{conversation_id}/received_messages")
+async def get_conversation_messages(
+    conversation_id: str,
+    session: SessionDep,
+    _: UserAuthentication,
+) -> List[MessageResponse]:
+    message_service = MessageService(session)
+
+    messages = await message_service.get_conversation_messages(conversation_id)
+
+    return messages
+
+
 @router.post("/{conversation_id}/participants", status_code=status.HTTP_200_OK)
 async def add_participant(
     conversation_id: str,
