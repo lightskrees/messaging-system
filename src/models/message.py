@@ -66,3 +66,6 @@ class Message(SQLModel, table=True):
         back_populates="received_messages", sa_relationship_kwargs={"foreign_keys": "Message.recipient_id"}
     )
     conversation: Optional["Conversation"] = Relationship(back_populates="messages")
+
+    # FOR CRYPTOGRAPHIC PURPOSE
+    nonce: bytes = Field(sa_column=Column(pg.BYTEA, nullable=True))  # number used once
