@@ -16,7 +16,7 @@ class UserManager(BaseManager[User]):
         result = await self.session.exec(statement)
         return result.first()
 
-    async def get_user_key(self, user_id: str) -> Optional[User]:
+    async def get_user_key(self, user_id: str) -> Optional[UserKey]:
         statement = select(UserKey).where(UserKey.user_id == user_id)
         result = await self.session.exec(statement)
         return result.first()
