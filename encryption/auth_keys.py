@@ -5,6 +5,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+from auth.utils import load_private_key
+from src.models import UserKey
+
 
 async def generate_key_pair():
     private_key = ec.generate_private_key(ec.SECP384R1())
@@ -40,3 +43,10 @@ async def decrypt_message(ciphertext: bytes, session_key: bytes, nonce: bytes) -
     aesgcm = AESGCM(session_key)
     plaintext = aesgcm.decrypt(nonce, ciphertext, None)
     return plaintext.decode()
+
+
+async def get_session_key(sender_id: str, recipient_userkey: UserKey) -> bytes:
+    sender_private_key = await load_private_key(sender_id)
+    recipient_key = serialization.load_pem_public_key(recipient_userkey.public_key)
+    shared_secret = await get_shared_secret(sender_private_key, recipient_key)
+    return await derive_key(shared_secret)
