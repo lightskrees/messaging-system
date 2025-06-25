@@ -35,6 +35,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+def decode_token(token: str) -> dict | None:
+    try:
+        token_data = jwt.decode(jwt=token, key=settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+
+        return token_data
+
+    except jwt.PyJWTError:
+        return None
+
+
 async def get_current_user(
     session: SessionDep,
     token: str = Depends(oauth2_scheme),
