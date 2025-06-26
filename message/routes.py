@@ -157,7 +157,7 @@ async def send_message(
         "type": "new_message",
         "data": {
             # "id": str(message.id),
-            "content": str(message.content),
+            "content": str(message_create.content),
             "sender_id": str(current_user.id),
             "recipient_id": str(message.recipient_id),
             "created_at": (
