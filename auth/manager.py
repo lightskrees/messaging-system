@@ -1,10 +1,11 @@
-from typing import Optional
+import uuid
+from typing import Optional, Union
 
-from sqlmodel import Session, select
+from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.base import BaseManager
-from src.models import User
+from src.models import User, UserKey
 
 
 class UserManager(BaseManager[User]):
@@ -13,6 +14,11 @@ class UserManager(BaseManager[User]):
 
     async def get_by_username(self, username: str) -> Optional[User]:
         statement = select(User).where(User.username == username)
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def get_user_key(self, user_id: Union[str, uuid.UUID]) -> Optional[UserKey]:
+        statement = select(UserKey).where(UserKey.user_id == user_id)
         result = await self.session.exec(statement)
         return result.first()
 

@@ -92,13 +92,13 @@ class MessageCreate(BaseModel):
 
 
 class MessageResponse(BaseModel):
-    id: uuid.UUID
-    timestamp: datetime
-    message_type: MessageType
-    is_read: bool
-    sender_id: uuid.UUID
-    recipient_id: uuid.UUID
-    conversation_id: uuid.UUID
+    id: Optional[uuid.UUID] = None
+    timestamp: Optional[datetime] = None
+    message_type: Optional[MessageType] = None
+    is_read: Optional[bool] = None
+    sender_id: Optional[uuid.UUID] = None
+    recipient_id: Optional[uuid.UUID] = None
+    conversation_id: uuid.UUID = None
 
     # Content fields
     content: Optional[str] = None
