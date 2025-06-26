@@ -5,11 +5,15 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
+from sqlmodel import select
 
 from auth.manager import UserManager
-from auth.schemas import Token, UserCreate, UserLogin, UserResponse
+from auth.schemas import PublicKeyResponse, Token, UserCreate, UserResponse
+from encryption import generate_key_pair
 from src.db_config import SessionDep, settings
-from src.models import User
+from src.models import User, UserKey
+
+from .utils import save_private_key
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -112,3 +116,24 @@ async def get_users(session: SessionDep, _: User = Depends(get_current_user)) ->
     user_manager = UserManager(session)
     users = await user_manager.get_all()
     return users
+
+
+@router.post("/auth/key-exchange", response_model=PublicKeyResponse)
+async def generate_key(session: SessionDep, authenticated_user: User = Depends(get_current_user)):
+    user_id = authenticated_user.id
+    userkey_exists = (await session.exec(select(UserKey).where(UserKey.user_id == user_id))).first()
+    if userkey_exists:
+        raise HTTPException(status_code=404, detail="User key already registered")
+
+    # first, we generate the key pair for the authenticated user
+    # we save his private key in a secure folder locally,
+    # then the public key is stored in the centralized key server (in our case we save in our db)
+    # just for test purposes
+    private_key, public_key = await generate_key_pair()
+    await save_private_key(str(user_id), private_key)
+
+    user_key_info = UserKey(user_id=user_id, public_key=public_key, algorithm=settings.JWT_ALGORITHM)
+    session.add(user_key_info)
+    await session.commit()
+
+    return PublicKeyResponse(public_key=public_key)

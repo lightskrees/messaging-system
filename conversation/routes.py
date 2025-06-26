@@ -1,12 +1,15 @@
+import json
+import os
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
+from auth.manager import UserManager
 from auth.routes import get_current_user
 from message.schemas import MessageResponse
 from message.service import MessageService
-from src.db_config import SessionDep
+from src.db_config import SessionDep, user_log_file
 from src.models import User
 
 from .manager import ConversationManager
@@ -35,20 +38,54 @@ async def get_conversation(
     _: UserAuthentication,
 ):
     message_service = MessageService(session)
-    conversation = message_service.get_conversation(conversation_id)
+    conversation = await message_service.get_conversation(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
 
 
-@router.get("/{conversation_id}/messages", response_model=List[MessageResponse])
+# @router.get("/{conversation_id}/messages", response_model=List[MessageResponse])
+# async def get_conversation_messages(
+#     conversation_id: str,
+#     session: SessionDep,
+#     _: UserAuthentication,
+# ):
+#     message_service = MessageService(session)
+#     messages = await message_service.get_conversation_messages(conversation_id)
+#     return messages
+
+
+@router.get("/{recipient_id}/messages")
+async def get_conversation_messages(
+    recipient_id: str,
+    session: SessionDep,
+    auth_user: UserAuthentication,
+):
+    user_manager = UserManager(session)
+    recipient = await user_manager.get_by_id(recipient_id)
+
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    path = user_log_file(str(auth_user.id), str(recipient.id))
+
+    if not os.path.exists(path):
+        return {"messages": []}
+    with open(path, "r") as f:
+        messages = json.load(f)
+    return {"messages": messages}
+
+
+@router.get("/{conversation_id}/received_messages")
 async def get_conversation_messages(
     conversation_id: str,
     session: SessionDep,
     _: UserAuthentication,
-):
+) -> List[MessageResponse]:
     message_service = MessageService(session)
-    messages = message_service.get_conversation_messages(conversation_id)
+
+    messages = await message_service.get_conversation_messages(conversation_id)
+
     return messages
 
 

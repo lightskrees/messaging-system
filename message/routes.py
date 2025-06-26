@@ -133,6 +133,23 @@ async def send_message(
     session: SessionDep,
     current_user: User = Depends(get_current_user),
 ):
+    user_manager = UserManager(session)
+
+    connected_userkey = await user_manager.get_user_key(current_user.id)
+
+    if not connected_userkey:
+        raise HTTPException(
+            status_code=404,
+            detail="Something is wrong with your account settings. Please contact support.",
+        )
+
+    recipient_key = await user_manager.get_user_key(message_create.recipient_id)
+    if not recipient_key:
+        raise HTTPException(
+            status_code=404,
+            detail="the user does not use our messaging system.",
+        )
+
     message_service = MessageService(session)
     message = await message_service.send_message(sender_id=str(current_user.id), message_data=message_create)
 

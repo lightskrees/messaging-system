@@ -6,19 +6,28 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 T = TypeVar("T", bound="SQLModel")
 
+# ToDo: the local storage sync with with SQLite to be implemented soon...
+
 
 class BaseManager(Generic[T], ABC):
-    def __init__(self, session: AsyncSession, model: Type[T]):
+    def __init__(self, session: AsyncSession, model: Type[T], local_session: AsyncSession | None = None):
         self.session = session
+        self.sqlite_session = local_session
         self.model = model
 
     async def create(self, obj: T) -> T:
         self.session.add(obj)
         await self.session.commit()
         await self.session.refresh(obj)
+
+        # self.sqlite_session.add(obj)
+        # await self.sqlite_session.commit()
+        # await self.sqlite_session.refresh(obj)
         return obj
 
-    async def get_by_id(self, id: str) -> Optional[T]:
+    async def get_by_id(self, id: str, use_local_db: bool = False) -> Optional[T]:
+
+        # session = self.sqlite_session if use_local_db else self.session
         return await self.session.get(self.model, id)
 
     async def get_all(self) -> List[T]:
@@ -30,6 +39,11 @@ class BaseManager(Generic[T], ABC):
         self.session.add(obj)
         await self.session.commit()
         await self.session.refresh(obj)
+
+        # self.sqlite_session.add(obj)
+        # await self.sqlite_session.commit()
+        # await self.sqlite_session.refresh(obj)
+
         return obj
 
     async def delete(self, id: str) -> bool:
@@ -37,5 +51,9 @@ class BaseManager(Generic[T], ABC):
         if obj:
             await self.session.delete(obj)
             await self.session.commit()
+
+            # await self.sqlite_session.delete(obj)
+            # await self.sqlite_session.commit()
+
             return True
         return False
