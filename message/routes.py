@@ -78,7 +78,7 @@ async def websocket_endpoint(websocket: WebSocket, conversation_with: str, sessi
             await websocket.send_json({"type": "message_sent", "data": message_payload})
 
     except WebSocketDisconnect:
-        manager.disconnect(str(user_obj.id))
+        await manager.disconnect(websocket, user_id)
     except Exception as e:
         print(f"WebSocket error: {e}")
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
