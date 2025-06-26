@@ -1,5 +1,6 @@
+import uuid
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Union
 
 from fastapi import WebSocket
 
@@ -25,7 +26,7 @@ class ConnectionManager:
 
             self.active_connections[user_id][websocket].active_conversation_with = conversation_with
 
-    async def disconnect(self, websocket: WebSocket, user_id: str):
+    async def disconnect(self, websocket: WebSocket, user_id: Union[str, uuid.UUID]):
         if user_id in self.active_connections:
             self.active_connections[user_id].pop(websocket, None)
             if not self.active_connections[user_id]:
