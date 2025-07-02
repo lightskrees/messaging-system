@@ -79,7 +79,7 @@ async def register(user_create: UserCreate, session: SessionDep):
 
     # Check if user exists
     if await user_manager.get_by_username(user_create.username):
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="Username already taken")
     if await user_manager.get_by_email(str(user_create.email)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -132,7 +132,7 @@ async def generate_key(session: SessionDep, authenticated_user: User = Depends(g
     private_key, public_key = await generate_key_pair()
     await save_private_key(str(user_id), private_key)
 
-    user_key_info = UserKey(user_id=user_id, public_key=public_key, algorithm=settings.JWT_ALGORITHM)
+    user_key_info = UserKey(user_id=user_id, public_key=public_key.decode(), algorithm=settings.JWT_ALGORITHM)
     session.add(user_key_info)
     await session.commit()
 
