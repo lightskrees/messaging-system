@@ -75,12 +75,12 @@ async def get_current_user(
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_create: UserCreate, session: SessionDep):
-    user_repo = UserManager(session)
+    user_manager = UserManager(session)
 
     # Check if user exists
-    if await user_repo.get_by_username(user_create.username):
+    if await user_manager.get_by_username(user_create.username):
         raise HTTPException(status_code=400, detail="Username already registered")
-    if await user_repo.get_by_email(str(user_create.email)):
+    if await user_manager.get_by_email(str(user_create.email)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # Create user
@@ -90,8 +90,8 @@ async def register(user_create: UserCreate, session: SessionDep):
         phone_number=user_create.phone_number,
         password_hash=get_password_hash(user_create.password),
     )
-    user_db = await user_repo.create(user)
-    return user
+    user_db = await user_manager.create(user)
+    return user_db
 
 
 @router.post("/login", response_model=Token)
