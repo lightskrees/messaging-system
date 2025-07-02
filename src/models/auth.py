@@ -2,14 +2,14 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-import sqlalchemy.dialects.postgresql as pg
+from sqlalchemy import String
 from sqlmodel import Column, Field, Relationship, SQLModel
 
 from src.models.conversation import ConversationParticipant
 
 
 class User(SQLModel, table=True):
-    id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
+    id: str = Field(sa_column=Column(String, nullable=False, primary_key=True, default=lambda: str(uuid.uuid4())))
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
     phone_number: str = Field(unique=True, index=True)
@@ -34,8 +34,8 @@ class User(SQLModel, table=True):
 # FOR CRYPTOGRAPHIC KEYS STORAGE
 class UserKey(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id")
-    public_key: bytes = Field(sa_column=Column(pg.BYTEA, nullable=False))
+    user_id: str = Field(foreign_key="user.id")
+    public_key: bytes = Field(sa_column=Column(String, nullable=False))
     algorithm: str  # Example: 'ECDH_SECP384R1'
     created_at: datetime = Field(default_factory=datetime.now)
     revoked: bool = Field(default=False)

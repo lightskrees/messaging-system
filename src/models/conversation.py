@@ -2,19 +2,19 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-import sqlalchemy.dialects.postgresql as pg
 from fastapi import HTTPException
+from sqlalchemy import String
 from sqlmodel import Column, Field, Relationship, SQLModel
 from starlette import status
 
 
 class ConversationParticipant(SQLModel, table=True):
-    conversation_id: uuid.UUID = Field(foreign_key="conversation.id", primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="user.id", primary_key=True)
+    conversation_id: str = Field(foreign_key="conversation.id", primary_key=True)
+    user_id: str = Field(foreign_key="user.id", primary_key=True)
 
 
 class Conversation(SQLModel, table=True):
-    id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
+    id: str = Field(sa_column=Column(String, nullable=False, primary_key=True, default=lambda: str(uuid.uuid4())))
     conversation_name: Optional[str] = Field(default=None)
     is_group: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.now)

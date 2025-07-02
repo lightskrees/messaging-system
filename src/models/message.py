@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-import sqlalchemy.dialects.postgresql as pg
+from sqlalchemy import String
 from sqlmodel import Column, Field, Relationship, SQLModel
 
 
@@ -16,13 +16,13 @@ class MessageType(str, Enum):
 
 
 class Message(SQLModel, table=True):
-    id: uuid.UUID = Field(sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4))
+    id: str = Field(sa_column=Column(String, nullable=False, primary_key=True, default=lambda: str(uuid.uuid4())))
     timestamp: datetime = Field(default_factory=datetime.now)
     message_type: MessageType = Field(default=MessageType.TEXT)
     is_read: bool = Field(default=False)
-    sender_id: Optional[uuid.UUID] = Field(foreign_key="user.id")
-    recipient_id: Optional[uuid.UUID] = Field(foreign_key="user.id")
-    conversation_id: Optional[uuid.UUID] = Field(foreign_key="conversation.id")
+    sender_id: Optional[str] = Field(foreign_key="user.id")
+    recipient_id: Optional[str] = Field(foreign_key="user.id")
+    conversation_id: Optional[str] = Field(foreign_key="conversation.id")
 
     #################
     # MEDIA METADATA
@@ -68,4 +68,4 @@ class Message(SQLModel, table=True):
     conversation: Optional["Conversation"] = Relationship(back_populates="messages")
 
     # FOR CRYPTOGRAPHIC PURPOSE
-    nonce: bytes = Field(sa_column=Column(pg.BYTEA, nullable=True))  # number used once
+    nonce: bytes = Field(sa_column=Column(String, nullable=True))  # number used once
