@@ -68,4 +68,4 @@ class Message(SQLModel, table=True):
     conversation: Optional["Conversation"] = Relationship(back_populates="messages")
 
     # FOR CRYPTOGRAPHIC PURPOSE
-    nonce: bytes = Field(sa_column=Column(String, nullable=True))  # number used once
+    nonce: str = Field(sa_column=Column(String, nullable=True))  # number used once
