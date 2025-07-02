@@ -15,8 +15,8 @@ from .service import MessageService
 router = APIRouter(prefix="/messages", tags=["messages"])
 
 
-@router.websocket("/{conversation_with}")
-async def websocket_endpoint(websocket: WebSocket, conversation_with: str, session: SessionDep):
+@router.websocket("/")
+async def websocket_endpoint(websocket: WebSocket, session: SessionDep):
     print("in websocket endpoint")
     token_data = decode_token(websocket.headers.get("Authorization"))
     if not token_data:
@@ -35,47 +35,10 @@ async def websocket_endpoint(websocket: WebSocket, conversation_with: str, sessi
 
     try:
         while True:
-            data = await websocket.receive_json()
+            await websocket.receive_json()
 
-            message_service = MessageService(session)
-
-            message_create = MessageCreate(
-                message_type=data.get("message_type"),
-                content=data.get("content"),
-                recipient_id=conversation_with,
-                image_url=data.get("image_url"),
-                image_filename=data.get("image_filename"),
-                image_size=data.get("image_size"),
-                file_url=data.get("file_url"),
-                file_filename=data.get("file_filename"),
-                file_size=data.get("file_size"),
-                file_mime_type=data.get("file_mime_type"),
-                voice_url=data.get("voice_url"),
-                voice_filename=data.get("voice_filename"),
-            )
-
-            message = await message_service.send_message(sender_id=str(user_id), message_data=message_create)
-
-            message_payload = {
-                "type": "new_message",
-                "data": {
-                    "content": str(message_create.content),
-                    "sender_id": str(user_id),
-                    "recipient_id": str(message_create.recipient_id),
-                    "created_at": (
-                        message.created_at.isoformat()
-                        if hasattr(message, "created_at")
-                        else datetime.now().isoformat()
-                    ),
-                },
-            }
-
-            await manager.send_personal_message(
-                message=message_payload, user_id=str(message.recipient_id), sender_id=str(user_id)
-            )
-
-            # Send confirmation back to sender
-            await websocket.send_json({"type": "message_sent", "data": message_payload})
+            # Send confirmation back to the sender
+            await websocket.send_text("message sent!")
 
     except WebSocketDisconnect:
         await manager.disconnect(websocket, user_id)
