@@ -47,6 +47,6 @@ async def decrypt_message(ciphertext: bytes, session_key: bytes, nonce: bytes) -
 
 async def get_session_key(sender_id: str, recipient_userkey: UserKey) -> bytes:
     sender_private_key = await load_private_key(sender_id)
-    recipient_key = serialization.load_pem_public_key(recipient_userkey.public_key)
+    recipient_key = serialization.load_pem_public_key(recipient_userkey.public_key.encode())
     shared_secret = await get_shared_secret(sender_private_key, recipient_key)
     return await derive_key(shared_secret)
