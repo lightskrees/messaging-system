@@ -57,7 +57,8 @@ class MessageService:
         if message_data.message_type == MessageType.TEXT:
             nonce, cipher_text = await encrypt_message(message_data.content, session_key=session_key)
 
-            message_dict["content"] = base64.b64encode(cipher_text).decode("utf-8")
+            # message_dict["content"] = base64.b64encode(cipher_text).decode("utf-8")
+            message_dict["content"] = cipher_text.hex()
         elif message_data.message_type == MessageType.IMAGE:
             message_dict.update(
                 {
@@ -98,7 +99,7 @@ class MessageService:
         if message_data.caption:
             message_dict["caption"] = message_data.caption
 
-        message = Message(nonce=nonce, **message_dict)
+        message = Message(nonce=nonce.hex(), **message_dict)
         message = await self.message_manager.create(message)
 
         register_sent_messages(sender_id, message_data.recipient_id, message_data.content)
@@ -127,9 +128,9 @@ class MessageService:
                 session_key = await get_session_key(str(message.sender_id), recipient_userkey)
 
                 # Decrypt the message content
-                decrypted_message = await decrypt_message(
-                    base64.b64decode(message.content), session_key, message.nonce
-                )
+                message_content = bytes.fromhex(message.content)
+                nonce = bytes.fromhex(message.nonce)
+                decrypted_message = await decrypt_message(message_content, session_key, nonce)
                 message.content = decrypted_message
 
         # ToDo: logic of merging local-based and database message for displaying...
