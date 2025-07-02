@@ -17,11 +17,17 @@ def get_db_path() -> str:
     return os.path.join(settings.LOCAL_DB_DIR, "msg_store.db")
 
 
-# def get_db_url() -> str:
-#     return f"sqlite+aiosqlite:///{get_db_path()}"
+def get_db_url() -> str:
+    return f"sqlite+aiosqlite:///{get_db_path()}"
+
 
 main_engine = AsyncEngine(create_engine(settings.DATABASE_URL, echo=False))
-# local_async_engine = AsyncEngine(create_engine(get_db_url(), echo=True))
+local_async_engine = AsyncEngine(create_engine(get_db_url(), echo=True))
+
+
+async def init_db():
+    async with local_async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
 async def get_session():
