@@ -6,6 +6,8 @@ from typing import Optional
 from sqlalchemy import String
 from sqlmodel import Column, Field, Relationship, SQLModel
 
+from src.db_config import local_db_metadata
+
 
 class MessageType(str, Enum):
     TEXT = "text"
@@ -69,3 +71,37 @@ class Message(SQLModel, table=True):
 
     # FOR CRYPTOGRAPHIC PURPOSE
     nonce: str = Field(sa_column=Column(String, nullable=True))  # number used once
+
+
+class LocalMessage(SQLModel, table=True):
+
+    metadata = local_db_metadata
+
+    message_id: str = Field(
+        sa_column=Column(String, nullable=False, primary_key=True, default=lambda: str(uuid.uuid4()))
+    )
+    timestamp: datetime = Field(default_factory=datetime.now)
+    message_type: MessageType = Field(default=MessageType.TEXT)
+    is_read: bool = Field(default=False)
+
+    sender_id: str = Field(sa_column=Column(String))
+    recipient_id: str = Field(sa_column=Column(String))
+    conversation_id: str = Field(sa_column=Column(String))
+
+    content: Optional[str] = Field(default=None)
+    caption: Optional[str] = Field(default=None)
+
+    # Media metadata
+    media_url: Optional[str] = Field(default=None)
+    media_filename: Optional[str] = Field(default=None)
+    media_size: Optional[int] = Field(default=None)
+    media_duration: Optional[int] = Field(default=None)  # Duration in seconds (for voice/video)
+    media_mime_type: Optional[str] = Field(default=None)
+    thumbnail_url: Optional[str] = Field(default=None)  # For video thumbnails
+
+    # Cryptographic field
+    nonce: Optional[str] = Field(sa_column=Column(String, nullable=True))
+
+    class Config:
+        # This ensures the model won't interfere with your main PostgreSQL models
+        arbitrary_types_allowed = True
