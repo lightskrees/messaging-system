@@ -6,13 +6,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from auth.manager import UserManager
 from src.base import BaseManager
+from src.db_config import SessionDep
 from src.models import Conversation, ConversationParticipant, User
 
 
 class ConversationManager(BaseManager[Conversation]):
-    def __init__(self, session: AsyncSession):
-        super().__init__(session, Conversation)
-        self.user_manager = UserManager(session)
+    def __init__(self, sessions: SessionDep):
+        super().__init__(sessions, Conversation)
+        self.user_manager = UserManager(sessions)
 
     async def get_by_user(self, user_id: str) -> List[Conversation]:
         statement = (

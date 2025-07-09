@@ -4,11 +4,12 @@ from sqlmodel import Session, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.base import BaseManager
+from src.db_config import SessionDep
 from src.models import Message
 
 
 class MessageManager(BaseManager[Message]):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: SessionDep):
         super().__init__(session, Message)
 
     async def get_by_conversation(self, conversation_id: str) -> List[Message]:

@@ -10,7 +10,7 @@ from sqlmodel import select
 from auth.manager import UserManager
 from auth.schemas import PublicKeyResponse, Token, UserCreate, UserResponse
 from encryption import generate_key_pair
-from src.db_config import SessionDep, settings
+from src.db_config import SessionDep, get_sessions, settings
 from src.models import User, UserKey
 
 from .utils import save_private_key
@@ -50,7 +50,7 @@ def decode_token(token: str) -> dict | None:
 
 
 async def get_current_user(
-    session: SessionDep,
+    session: SessionDep = Depends(get_sessions),
     token: str = Depends(oauth2_scheme),
 ) -> User:
     credentials_exception = HTTPException(
@@ -74,7 +74,7 @@ async def get_current_user(
 
 
 @router.post("/register", response_model=UserResponse)
-async def register(user_create: UserCreate, session: SessionDep):
+async def register(user_create: UserCreate, session: SessionDep = Depends(get_sessions)):
     user_manager = UserManager(session)
 
     # Check if user exists
@@ -95,7 +95,9 @@ async def register(user_create: UserCreate, session: SessionDep):
 
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep):
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], session: SessionDep = Depends(get_sessions)
+):
     user_repo = UserManager(session)
     user = await user_repo.get_by_username(form_data.username)
 
@@ -112,14 +114,18 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 
 @router.get("/users/list")
-async def get_users(session: SessionDep, _: User = Depends(get_current_user)) -> List[UserResponse] | None:
+async def get_users(
+    session: SessionDep = Depends(get_sessions), _: User = Depends(get_current_user)
+) -> List[UserResponse] | None:
     user_manager = UserManager(session)
     users = await user_manager.get_all()
     return users
 
 
 @router.post("/auth/key-exchange", response_model=PublicKeyResponse)
-async def generate_key(session: SessionDep, authenticated_user: User = Depends(get_current_user)):
+async def generate_key(
+    session: SessionDep = Depends(get_sessions), authenticated_user: User = Depends(get_current_user)
+):
     user_id = authenticated_user.id
     userkey_exists = (await session.exec(select(UserKey).where(UserKey.user_id == user_id))).first()
     if userkey_exists:

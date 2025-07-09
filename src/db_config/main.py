@@ -1,7 +1,7 @@
 import os
+from dataclasses import dataclass
 from typing import Annotated
 
-from fastapi import Depends
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
@@ -30,16 +30,20 @@ async def init_db():
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
-async def get_session():
+@dataclass
+class DatabaseSessions:
+    main_session: AsyncSession
+    local_session: AsyncSession
+
+
+async def get_sessions():
     session = sessionmaker(bind=main_engine, class_=AsyncSession, expire_on_commit=False)
 
-    # sqlite_session = sessionmaker(bind=local_async_engine, class_=AsyncSession, expire_on_commit=False)
+    local_session = sessionmaker(bind=local_async_engine, class_=AsyncSession, expire_on_commit=False)
 
-    async with (
-        session() as session,
-        # sqlite_session() as sqlite_session
-    ):
-        yield session
+    async with session() as session, local_session() as local_session:
+        yield DatabaseSessions(session, local_session)
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+# SessionDep = Annotated[Session, Depends(get_sessions)]
+SessionDep = DatabaseSessions

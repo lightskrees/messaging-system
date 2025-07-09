@@ -4,15 +4,17 @@ from typing import Generic, List, Optional, Type, TypeVar
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from src.db_config import SessionDep
+
 T = TypeVar("T", bound="SQLModel")
 
 # ToDo: the local storage sync with with SQLite to be implemented soon...
 
 
 class BaseManager(Generic[T], ABC):
-    def __init__(self, session: AsyncSession, model: Type[T], local_session: AsyncSession | None = None):
-        self.session = session
-        self.sqlite_session = local_session
+    def __init__(self, sessions: SessionDep, model: Type[T]):
+        self.session = sessions.main_session
+        self.local_session = sessions.local_session
         self.model = model
 
     async def create(self, obj: T) -> T:

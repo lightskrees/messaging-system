@@ -1,11 +1,12 @@
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import (APIRouter, Depends, HTTPException, WebSocket,
                      WebSocketDisconnect, status)
 
 from auth.manager import UserManager
 from auth.routes import decode_token, get_current_user
-from src.db_config import SessionDep
+from src.db_config import SessionDep, get_sessions
 from src.models import User
 from src.websockets_conn import manager
 
@@ -13,6 +14,8 @@ from .schemas import MessageCreate, MessageResponse
 from .service import MessageService
 
 router = APIRouter(prefix="/messages", tags=["messages"])
+
+SessionDep = Annotated[SessionDep, Depends(get_sessions)]
 
 
 @router.websocket("/")

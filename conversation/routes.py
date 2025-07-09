@@ -9,7 +9,7 @@ from auth.manager import UserManager
 from auth.routes import get_current_user
 from message.schemas import MessageResponse
 from message.service import MessageService
-from src.db_config import SessionDep, user_log_file
+from src.db_config import SessionDep, get_sessions, user_log_file
 from src.models import User
 
 from .manager import ConversationManager
@@ -23,8 +23,8 @@ UserAuthentication = Annotated[User, Depends(get_current_user)]
 
 @router.get("/", response_model=List[ConversationResponse])
 async def get_user_conversations(
-    session: SessionDep,
     current_user: UserAuthentication,
+    session: SessionDep = Depends(get_sessions),
 ):
     message_service = MessageService(session)
     conversations = await message_service.get_user_conversations(str(current_user.id))
@@ -32,11 +32,7 @@ async def get_user_conversations(
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
-async def get_conversation(
-    conversation_id: str,
-    session: SessionDep,
-    _: UserAuthentication,
-):
+async def get_conversation(conversation_id: str, _: UserAuthentication, session: SessionDep = Depends(get_sessions)):
     message_service = MessageService(session)
     conversation = await message_service.get_conversation(conversation_id)
     if not conversation:
@@ -57,9 +53,7 @@ async def get_conversation(
 
 @router.get("/{recipient_id}/messages")
 async def get_conversation_messages(
-    recipient_id: str,
-    session: SessionDep,
-    auth_user: UserAuthentication,
+    recipient_id: str, auth_user: UserAuthentication, session: SessionDep = Depends(get_sessions)
 ):
     user_manager = UserManager(session)
     recipient = await user_manager.get_by_id(recipient_id)
@@ -79,8 +73,8 @@ async def get_conversation_messages(
 @router.get("/{conversation_id}/received_messages")
 async def get_conversation_messages(
     conversation_id: str,
-    session: SessionDep,
     _: UserAuthentication,
+    session: SessionDep = Depends(get_sessions),
 ) -> List[MessageResponse]:
     message_service = MessageService(session)
 
@@ -93,8 +87,8 @@ async def get_conversation_messages(
 async def add_participant(
     conversation_id: str,
     user_id: str,
-    session: SessionDep,
     _: User = Depends(get_current_user),
+    session: SessionDep = Depends(get_sessions),
 ):
     conversation_manager = ConversationManager(session)
     success = await conversation_manager.add_participant(conversation_id, user_id)

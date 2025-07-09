@@ -12,7 +12,7 @@ from auth.manager import UserManager
 from auth.utils import load_private_key
 from conversation.manager import ConversationManager
 from encryption import decrypt_message, encrypt_message, get_session_key
-from src.db_config import register_sent_messages
+from src.db_config import SessionDep, register_sent_messages
 from src.models import Conversation, Message, MessageType, UserKey
 
 from .manager import MessageManager
@@ -20,8 +20,8 @@ from .schemas import MessageCreate
 
 
 class MessageService:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+    def __init__(self, session: SessionDep):
+        self.session, self.local_session = session
         self.message_manager = MessageManager(session)
         self.conversation_manager = ConversationManager(session)
         self.user_manager = UserManager(session)
