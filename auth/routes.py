@@ -124,10 +124,12 @@ async def get_users(
 
 @router.post("/auth/key-exchange", response_model=PublicKeyResponse)
 async def generate_key(
-    session: SessionDep = Depends(get_sessions), authenticated_user: User = Depends(get_current_user)
+    sessions: SessionDep = Depends(get_sessions), authenticated_user: User = Depends(get_current_user)
 ):
+    user_manager = UserManager(sessions)
+
     user_id = authenticated_user.id
-    userkey_exists = (await session.exec(select(UserKey).where(UserKey.user_id == user_id))).first()
+    userkey_exists = await user_manager.get_user_key(user_id)
     if userkey_exists:
         raise HTTPException(status_code=404, detail="User key already registered")
 
@@ -138,8 +140,6 @@ async def generate_key(
     private_key, public_key = await generate_key_pair()
     await save_private_key(str(user_id), private_key)
 
-    user_key_info = UserKey(user_id=user_id, public_key=public_key.decode(), algorithm=settings.JWT_ALGORITHM)
-    session.add(user_key_info)
-    await session.commit()
+    await user_manager.create_user_key(user_id, public_key.decode(), settings.JWT_ALGORITHM)
 
-    return PublicKeyResponse(public_key=public_key)
+    return PublicKeyResponse(public_key=public_key.decode())

@@ -25,6 +25,17 @@ class UserManager(BaseManager[User]):
         result = await self.session.exec(statement)
         return result.first()
 
+    async def create_user_key(self, user_id: Union[str, uuid.UUID], key: str, algorithm: str) -> UserKey:
+        """
+        Create a UserKey for the given user_id with the provided key and algorithm,
+        using the main database session.
+        """
+        user_key = UserKey(user_id=user_id, public_key=key, algorithm=algorithm)
+        self.session.add(user_key)
+        await self.session.commit()
+        await self.session.refresh(user_key)
+        return user_key
+
     async def get_by_email(self, email: str) -> Optional[User]:
         statement = select(User).where(User.email == email)
         result = await self.session.exec(statement)
