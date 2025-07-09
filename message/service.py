@@ -1,19 +1,21 @@
-import base64
 from datetime import datetime
 from typing import List, Optional
 
-from cryptography.hazmat.primitives import serialization
 from fastapi import HTTPException
 from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette import status
 
 from auth.manager import UserManager
-from auth.utils import load_private_key
 from conversation.manager import ConversationManager
 from encryption import decrypt_message, encrypt_message, get_session_key
 from src.db_config import SessionDep, register_sent_messages
-from src.models import Conversation, Message, MessageType, UserKey
+from src.models import (
+    Conversation,
+    LocalMessage,
+    Message,
+    MessageType,
+    UserKey
+)
 
 from .manager import MessageManager
 from .schemas import MessageCreate
@@ -21,7 +23,7 @@ from .schemas import MessageCreate
 
 class MessageService:
     def __init__(self, session: SessionDep):
-        self.session, self.local_session = session
+        self.session, self.local_session = session.main_session, session.local_session
         self.message_manager = MessageManager(session)
         self.conversation_manager = ConversationManager(session)
         self.user_manager = UserManager(session)
@@ -103,6 +105,7 @@ class MessageService:
         message = await self.message_manager.create(message)
 
         register_sent_messages(sender_id, message_data.recipient_id, message_data.content)
+        await self._save_in_local_db(message_data, message_dict, message)
 
         # Update conversation last activity
         conversation.last_activity = datetime.now()
@@ -161,3 +164,79 @@ class MessageService:
 
     async def get_user_conversations(self, user_id: str) -> List[Conversation]:
         return await self.conversation_manager.get_by_user(user_id)
+
+    async def _save_in_local_db(self, message_data: MessageCreate, main_db: dict, message_object: Message = None):
+        local_message = LocalMessage(
+            message_id=message_object.id,
+            timestamp=message_object.timestamp,
+            message_type=message_data.message_type,
+            # is_read=message_data.is_read,
+            sender_id=main_db.get("sender_id"),
+            recipient_id=message_data.recipient_id,
+            conversation_id=main_db.get("conversation_id"),
+            content=message_data.content,
+            caption=message_data.caption,
+            media_url=next(
+                (
+                    url
+                    for url in [
+                        message_data.image_url,
+                        message_data.file_url,
+                        message_data.voice_url,
+                        message_data.video_url,
+                    ]
+                    if url is not None
+                ),
+                None,
+            ),
+            media_filename=next(
+                (
+                    filename
+                    for filename in [
+                        message_data.image_filename,
+                        message_data.file_filename,
+                        message_data.voice_filename,
+                        message_data.video_filename,
+                    ]
+                    if filename is not None
+                ),
+                None,
+            ),
+            media_size=next(
+                (
+                    size
+                    for size in [message_data.image_size, message_data.file_size, message_data.video_size]
+                    if size is not None
+                ),
+                None,
+            ),
+            media_duration=next(
+                (
+                    duration
+                    for duration in [message_data.voice_duration, message_data.video_duration]
+                    if duration is not None
+                ),
+                None,
+            ),
+            media_mime_type=message_data.file_mime_type,
+            thumbnail_url=message_data.video_thumbnail_url,
+            nonce=message_object.nonce,
+        )
+
+        self.local_session.add(local_message)
+        await self.local_session.commit()
+
+    async def get_local_conversation_messages(self, sender_id: str, recipient_id: str) -> List[LocalMessage]:
+
+        query = (
+            select(LocalMessage)
+            .where(
+                ((LocalMessage.sender_id == sender_id) & (LocalMessage.recipient_id == recipient_id))
+                | ((LocalMessage.sender_id == recipient_id) & (LocalMessage.recipient_id == sender_id))
+            )
+            .order_by(LocalMessage.timestamp.desc())
+        )
+
+        result = await self.local_session.exec(query)
+        messages = result.all()
+        return messages

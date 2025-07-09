@@ -95,3 +95,23 @@ async def add_participant(
     if not success:
         raise HTTPException(status_code=404, detail="Conversation or user not found")
     return {"status": "participant added"}
+
+
+@router.get("/{recipient_id}/local_messages")
+async def get_local_conversation_messages(
+    recipient_id: str, auth_user: UserAuthentication, session: SessionDep = Depends(get_sessions)
+):
+    """
+    Get conversation messages from local storage between the authenticated user
+    and the recipient.
+    """
+    user_manager = UserManager(session)
+    recipient = await user_manager.get_by_id(recipient_id)
+
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    message_service = MessageService(session)
+    messages = await message_service.get_local_conversation_messages(str(auth_user.id), recipient_id)
+
+    return {"messages": [message.model_dump() for message in messages]}
