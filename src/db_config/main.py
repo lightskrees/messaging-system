@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import Annotated
 
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session, SQLModel, create_engine
@@ -9,7 +10,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.config import Config as settings
 
-# ToDo: logic about two sessions to be configured soon...
+local_db_metadata = MetaData()
 
 
 def get_db_path() -> str:
@@ -25,9 +26,10 @@ main_engine = AsyncEngine(create_engine(settings.DATABASE_URL, echo=False))
 local_async_engine = AsyncEngine(create_engine(get_db_url(), echo=True))
 
 
+# running migrations for the local database for READ operations
 async def init_db():
     async with local_async_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        await conn.run_sync(local_db_metadata.create_all)
 
 
 @dataclass
