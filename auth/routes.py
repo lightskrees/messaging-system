@@ -11,6 +11,8 @@ from auth.manager import UserManager
 from auth.schemas import PublicKeyResponse, Token, UserCreate, UserResponse
 from encryption import generate_key_pair
 from src.db_config import SessionDep, get_sessions, settings
+from src.db_config.local_db_confg import LocalDBConfig
+from src.db_config.local_session import get_local_session, local_session_state
 from src.models import User, UserKey
 
 from .utils import save_private_key
@@ -110,6 +112,11 @@ async def login_for_access_token(
 
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+
+    local_db = LocalDBConfig(db_name=user.username)
+    await local_db.init_db()
+    local_session_state.session = local_db.local_session
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
